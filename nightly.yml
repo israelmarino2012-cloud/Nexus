@@ -1,0 +1,57 @@
+name: Nexus Nightly (Windows portable)
+
+on:
+  workflow_dispatch:          # botão "Run workflow"
+  push:
+    branches: [ main, master ]
+  schedule:
+    - cron: "0 5 * * 1"       # toda segunda, 05:00 UTC
+
+permissions:
+  contents: write             # necessário para publicar o release
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      # Baixa o Snes9x 1.60 oficial (com bibliotecas) e aplica a marca Nexus por cima.
+      - name: Baixar Snes9x 1.60 e aplicar Nexus
+        shell: bash
+        run: |
+          git clone --depth 1 --branch 1.60 --recurse-submodules --shallow-submodules \
+            https://github.com/snes9xgit/snes9x.git src
+          cp -r overlay/. src/
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Compilar
+        shell: pwsh
+        working-directory: src
+        run: |
+          msbuild win32\snes9xw.sln /t:snes9x /m `
+            /p:Configuration="Release Unicode" /p:Platform=x64 `
+            /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0
+
+      - name: Montar pacote portátil
+        shell: pwsh
+        working-directory: src
+        run: |
+          if (-not (Test-Path win32\nexus-x64.exe)) { throw "nexus-x64.exe não foi gerado" }
+          New-Item -ItemType Directory -Force Nexus | Out-Null
+          Copy-Item win32\nexus-x64.exe Nexus\Nexus.exe
+          Copy-Item LICENSE Nexus\
+          Copy-Item data\cheats.bml Nexus\
+          Copy-Item NEXUS_README.md Nexus\LEIA-ME.md
+          Compress-Archive -Path Nexus -DestinationPath ..\Nexus-portable-win64.zip
+
+      - name: Publicar release "nightly"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete nightly --yes --cleanup-tag 2>/dev/null || true
+          gh release create nightly Nexus-portable-win64.zip \
+            --prerelease --title "Nexus Nightly" \
+            --notes "Build automático do Nexus (baseado no Snes9x 1.60). Baixe o .zip, extraia e abra Nexus.exe. Gerado em $(date -u +'%Y-%m-%d %H:%M UTC')."
