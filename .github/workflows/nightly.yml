@@ -34,13 +34,27 @@ jobs:
             /p:Configuration="Release Unicode" /p:Platform=x64 `
             /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0
 
+      # Launcher (biblioteca de jogos com capas): C# compilado com o csc.exe
+      # que já vem no Windows, sem instalar nada.
+      - name: Compilar launcher (biblioteca)
+        shell: pwsh
+        run: |
+          $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+          & $csc /nologo /target:winexe /optimize+ /out:Nexus-launcher.exe `
+            /win32icon:src\win32\rsrc\icon1.ico `
+            /r:System.Windows.Forms.dll /r:System.Drawing.dll `
+            launcher\Program.cs
+          if ($LASTEXITCODE -ne 0) { throw "falha ao compilar o launcher" }
+
       - name: Montar pacote portátil
         shell: pwsh
         working-directory: src
         run: |
           if (-not (Test-Path win32\nexus-x64.exe)) { throw "nexus-x64.exe não foi gerado" }
+          if (-not (Test-Path ..\Nexus-launcher.exe)) { throw "Nexus-launcher.exe não foi gerado" }
           New-Item -ItemType Directory -Force Nexus | Out-Null
-          Copy-Item win32\nexus-x64.exe Nexus\Nexus.exe
+          Copy-Item ..\Nexus-launcher.exe Nexus\Nexus.exe
+          Copy-Item win32\nexus-x64.exe Nexus\NexusCore.exe
           Copy-Item LICENSE Nexus\
           Copy-Item data\cheats.bml Nexus\
           Copy-Item NEXUS_README.md Nexus\LEIA-ME.md
