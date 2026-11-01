@@ -172,7 +172,7 @@ namespace NexusLauncher
                 {
                     try
                     {
-                        ServicePointManager.SecurityProtocol = (SecurityProtocol)3072;
+                        ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
                         using (WebClient wc = new WebClient())
                         {
                             wc.Encoding = Encoding.UTF8;
@@ -242,7 +242,7 @@ namespace NexusLauncher
             string url = Base + Uri.EscapeDataString(name) + ".png";
             try
             {
-                ServicePointManager.SecurityProtocol = (SecurityProtocol)3072;
+                ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
                 using (WebClient wc = new WebClient())
                 {
                     wc.Headers[HttpRequestHeader.UserAgent] = "NexusLauncher/1.0";
@@ -261,7 +261,7 @@ namespace NexusLauncher
         // Runs on a worker thread. Returns true if a cover was saved to destPath.
         public static bool Download(string title, string destPath, string indexFile)
         {
-            try { ServicePointManager.SecurityProtocol = (SecurityProtocol)3072; } catch { }
+            try { ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072; } catch { }
 
             string match = FindBest(title, LoadIndex(indexFile));
             if (match != null && TryDownload(match, destPath)) return true;
