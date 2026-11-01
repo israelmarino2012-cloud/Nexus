@@ -497,6 +497,7 @@ namespace NexusLauncher
         TextBox search;
         Dictionary<string, Image> coverCache = new Dictionary<string, Image>();
         string corePath;
+        bool playing;
 
         public MainForm()
         {
@@ -787,7 +788,6 @@ namespace NexusLauncher
                 card.ContextMenuStrip = BuildMenu(card);
                 EventHandler play = delegate { Play(card.RomPath); };
                 card.Click += play;
-                card.Cover.Click += play;
                 foreach (Control c in card.Controls) c.Click += play;
                 grid.Controls.Add(card);
                 ApplyCover(card, rom);
@@ -861,6 +861,7 @@ namespace NexusLauncher
         // --------------------------------------------------------------- play
         void Play(string rom)
         {
+            if (playing) return;
             if (!File.Exists(corePath))
             {
                 MessageBox.Show(this, "O NexusCore.exe n\u00e3o foi encontrado ao lado do Nexus.exe.", "Nexus");
@@ -876,20 +877,23 @@ namespace NexusLauncher
                 ProcessStartInfo psi = new ProcessStartInfo(corePath, "\"" + rom + "\"");
                 psi.WorkingDirectory = Path.GetDirectoryName(corePath);
                 psi.UseShellExecute = false;
+                playing = true;
                 Process p = Process.Start(psi);
+                if (p == null) { playing = false; return; }
                 Hide();
                 ThreadPool.QueueUserWorkItem(delegate
                 {
                     try { p.WaitForExit(); } catch { }
                     try
                     {
-                        BeginInvoke(new MethodInvoker(delegate { Show(); Activate(); }));
+                        BeginInvoke(new MethodInvoker(delegate { playing = false; Show(); Activate(); }));
                     }
                     catch { }
                 });
             }
             catch (Exception ex)
             {
+                playing = false;
                 MessageBox.Show(this, "N\u00e3o foi poss\u00edvel abrir o emulador.\r\n" + ex.Message, "Nexus");
             }
         }
