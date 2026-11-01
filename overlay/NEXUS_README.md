@@ -28,10 +28,13 @@ Se algum pacote opcional (xv, portaudio, wayland...) faltar, o meson só
 desativa o recurso. Se faltar GTK3, SDL2 ou xrandr, ele para e avisa.
 
 ## Windows
-O port GTK depende de X11 e só roda em Linux. Para Windows existe o port nativo
-(`win32/`), também renomeado para Nexus (nome, ícone e textos). A interface dele
-é a nativa do Windows (sem o tema escuro do GTK). Para gerar o `Nexus.exe`
-portátil, veja `COMO_GERAR_EXE.md`.
+Instale com `Nexus-Setup.exe` (ou use o .zip portatil). Abra o Nexus: a pagina inicial
+tem o botao "Adicionar jogos" (ou arraste os arquivos .sfc/.smc/.zip para a janela).
+As capas dos jogos sao baixadas automaticamente (precisa de internet) e ficam salvas
+na pasta `covers`. Clique com o botao direito num jogo para trocar a capa ou remover.
+Dica: quanto mais parecido com o nome oficial for o nome do arquivo
+(ex.: "Super Mario World (USA).sfc"), mais facil e achar a capa.
+`NexusCore.exe` e o emulador em si (baseado no Snes9x), com todos os menus e opcoes.
 
 ## ROMs
 Você precisa fornecer ROMs (.sfc/.smc) de jogos que você possui.
