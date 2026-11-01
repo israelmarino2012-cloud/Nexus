@@ -39,8 +39,9 @@ jobs:
       - name: Compilar launcher (biblioteca)
         shell: pwsh
         run: |
+          if (-not (Test-Path launcher\Program.cs)) { throw "A pasta 'launcher' (com o Program.cs) não está no repositório. Envie-a por Add file > Upload files." }
           $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
-          & $csc /nologo /target:winexe /optimize+ /out:Nexus-launcher.exe `
+          & $csc /nologo /codepage:65001 /target:winexe /optimize+ /out:Nexus-launcher.exe `
             /win32icon:src\win32\rsrc\icon1.ico `
             /r:System.Windows.Forms.dll /r:System.Drawing.dll `
             launcher\Program.cs
@@ -60,12 +61,24 @@ jobs:
           Copy-Item NEXUS_README.md Nexus\LEIA-ME.md
           Compress-Archive -Path Nexus -DestinationPath ..\Nexus-portable-win64.zip
 
+      # Instalador (Inno Setup): instala por usuário, cria atalhos e desinstalador.
+      - name: Criar instalador
+        shell: pwsh
+        run: |
+          if (-not (Test-Path installer\nexus.iss)) { throw "A pasta 'installer' (com o nexus.iss) não está no repositório. Envie-a por Add file > Upload files." }
+          choco install innosetup -y --no-progress
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) { throw "Inno Setup não foi instalado" }
+          & $iscc /Qp "/DStage=$PWD\src\Nexus" "/DIcon=$PWD\src\win32\rsrc\icon1.ico" "/DOutDir=$PWD" installer\nexus.iss
+          if ($LASTEXITCODE -ne 0) { throw "falha ao criar o instalador" }
+          if (-not (Test-Path Nexus-Setup.exe)) { throw "Nexus-Setup.exe não foi gerado" }
+
       - name: Publicar release "nightly"
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete nightly --yes --cleanup-tag 2>/dev/null || true
-          gh release create nightly Nexus-portable-win64.zip \
+          gh release create nightly Nexus-Setup.exe Nexus-portable-win64.zip \
             --prerelease --title "Nexus Nightly" \
-            --notes "Build automático do Nexus (baseado no Snes9x 1.60). Baixe o .zip, extraia e abra Nexus.exe. Gerado em $(date -u +'%Y-%m-%d %H:%M UTC')."
+            --notes "Build automático do Nexus (baseado no Snes9x 1.60). Baixe o Nexus-Setup.exe e instale (ou use o .zip portátil). Gerado em $(date -u +'%Y-%m-%d %H:%M UTC')."
